@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instapic</title>
+    <link rel="stylesheet" href="{% static 'assets/bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/Login-Form-Clean.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/styles.css' %}">
+</head>
+
+<body>
+    <div class="login-clean">
+        <form method="post">{% csrf_token %}
+            <h2 class="sr-only">Login Form</h2>
+            <center><img src="{% static 'assets/img/logo.jpg' %}"></center><br>
+
+            {% for field in form %}
+                {{ field }}<br>
+
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <span style="color:deeppink">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+
+            <div class="form-group">
+                <button class="btn btn-primary btn-block" type="submit">Create Account</button>
+            </div><a href="{% url 'login' %}" class="forgot">Already got an account? Login here ...</a></form>
+    </div>
+    <script src="{% static 'assets/js/jquery.min.js' %}"></script>
+    <script src="{% static 'assets/bootstrap/js/bootstrap.min.js' %}"></script>
+</body>
+
+</html>
