@@ -39,7 +39,7 @@ class Ajax(forms.Form):
         self.args = args
         if len(args) > 1:
             self.user = args[1]
-            if self.user.id == None:
+            if self.user.id is None:
                 self.user = "NL"
 
     def error(self, message):
@@ -70,10 +70,13 @@ class AjaxSavePhoto(Ajax):
         if len(self.caption) > 140:
                 return self.error("Caption must be 140 characters.")
 
-        if self.url[0:20] != "https://ucarecdn.com" or self.baseurl[0:20] != "https://ucarecdn.com":
+        if (
+            self.url[:20] != "https://ucarecdn.com"
+            or self.baseurl[:20] != "https://ucarecdn.com"
+        ):
             return self.error("Invalid image URL")
 
-        result = urlopen(self.baseurl+"-/preview/-/main_colors/3/")
+        result = urlopen(f'{self.baseurl}-/preview/-/main_colors/3/')
         data = result.read()
         data = json.loads(data.decode('utf-8'))
 
@@ -84,7 +87,7 @@ class AjaxSavePhoto(Ajax):
                 main_colour = main_colour + str(colour) + ","
             main_colour = main_colour[:-1]
 
-        result = urlopen(self.baseurl+"detect_faces/")
+        result = urlopen(f'{self.baseurl}detect_faces/')
         data = result.read()
         data = json.loads(data.decode('utf-8'))
 
@@ -132,8 +135,10 @@ class AjaxPhotoFeed(Ajax):
         followerslist = [self.user.username]
         profilepics = {}
 
-        for follower in Followers.objects.filter(follower=self.user.username):
-            followerslist.append(follower.user)
+        followerslist.extend(
+            follower.user
+            for follower in Followers.objects.filter(follower=self.user.username)
+        )
 
         for user in users.objects.filter(username__in=followerslist):
             profilepics[user.username] = user.profilepic
@@ -141,10 +146,12 @@ class AjaxPhotoFeed(Ajax):
                 profilepics[user.username] = "static/assets/img/default.png"
 
         for item in Photo.objects.filter(owner__in=followerslist).order_by('-date_uploaded')[int(self.start):int(self.start)+3]:
-            if PhotoLikes.objects.filter(liker=self.user.username).filter(postid=item.id).exists():
-                liked = True
-            else:
-                liked = False
+            liked = bool(
+                PhotoLikes.objects.filter(liker=self.user.username)
+                .filter(postid=item.id)
+                .exists()
+            )
+
             out.append({ "PostID": item.id, "URL": item.url, "Caption": item.caption, "Owner": item.owner, "Likes": item.likes, "DateUploaded": item.date_uploaded.strftime("%Y-%m-%d %H:%M:%S"), "Liked": liked, "ProfilePic": profilepics[item.owner]+"", "MainColour": item.main_colour })
 
         return self.items(json.dumps(out))
@@ -158,10 +165,12 @@ class AjaxProfileFeed(Ajax):
             return self.error("Malformed request, did not process.")
         out = []
         for item in Photo.objects.filter(owner=self.username).order_by('-date_uploaded')[int(self.start):int(self.start)+3]:
-            if PhotoLikes.objects.filter(liker=self.user.username).filter(postid=item.id).exists():
-                liked = True
-            else:
-                liked = False
+            liked = bool(
+                PhotoLikes.objects.filter(liker=self.user.username)
+                .filter(postid=item.id)
+                .exists()
+            )
+
             out.append({ "PostID": item.id, "URL": item.url, "Caption": item.caption, "Owner": item.owner, "Likes": item.likes, "DateUploaded": item.date_uploaded.strftime("%Y-%m-%d %H:%M:%S"), "Liked": liked, "MainColour": item.main_colour })
 
         return self.items(json.dumps(out))
@@ -178,7 +187,10 @@ class AjaxSetProfilePic(Ajax):
         if self.user == "NL":
             return self.error("Unauthorised request.")
 
-        if self.url[0:20] != "https://ucarecdn.com" or self.baseurl[0:20] != "https://ucarecdn.com":
+        if (
+            self.url[:20] != "https://ucarecdn.com"
+            or self.baseurl[:20] != "https://ucarecdn.com"
+        ):
             return self.error("Invalid image URL")
 
         u = users.objects.filter(username=self.user.username)[0]
