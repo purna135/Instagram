@@ -89,21 +89,23 @@ def ajaxprofilefeed(request):
 
 
 def profile(request, username):
-    if users.objects.filter(username=username).exists():
-        u = users.objects.filter(username=username)[0]
-        if not Followers.objects.filter(user=username, follower=request.user.username).exists():
-            following = "Follow"
-        else:
-            following = "Unfollow"
-
-        if u.profilepic == "":
-            u.profilepic = "static/assets/img/default.png"
-        context = { "ProfilePic": u.profilepic, "whosprofile": username, "logged_in_as": request.user.username, "following": following }
-        if request.user.is_authenticated:
-            return render(request, 'logged-in-profile.html', context)
-        return render(request, 'profile.html', context)
-    else:
+    if not users.objects.filter(username=username).exists():
         return HttpResponseRedirect(reverse('login'))
+    u = users.objects.filter(username=username)[0]
+    following = (
+        "Unfollow"
+        if Followers.objects.filter(
+            user=username, follower=request.user.username
+        ).exists()
+        else "Follow"
+    )
+
+    if u.profilepic == "":
+        u.profilepic = "static/assets/img/default.png"
+    context = { "ProfilePic": u.profilepic, "whosprofile": username, "logged_in_as": request.user.username, "following": following }
+    if request.user.is_authenticated:
+        return render(request, 'logged-in-profile.html', context)
+    return render(request, 'profile.html', context)
 
 # def upload(request):
 #     form = UploadForm()
